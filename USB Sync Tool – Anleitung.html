@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USB Sync Tool – Anleitung</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
+
+  :root {
+    --bg:       #0d0f14;
+    --surface:  #13161f;
+    --surface2: #1c2030;
+    --border:   #252a3a;
+    --accent:   #3d7aed;
+    --accent2:  #00c9a7;
+    --accent3:  #f5a623;
+    --accent4:  #e05252;
+    --text:     #e2e6f0;
+    --muted:    #7a829e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.75;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative; z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 64px 32px 120px;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 48px;
+    margin-bottom: 64px;
+  }
+
+  .badges { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 3px 10px; border-radius: 3px;
+  }
+  .badge-blue  { background: var(--accent);  color: #fff; }
+  .badge-green { background: var(--accent2); color: #0d0f14; }
+  .badge-amber { background: var(--accent3); color: #0d0f14; }
+
+  h1 {
+    font-size: clamp(40px, 6vw, 70px);
+    font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;
+    margin-bottom: 14px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 17px; }
+
+  section { margin-bottom: 60px; }
+
+  h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent2); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  h3 { font-size: 18px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+  p  { color: var(--muted); margin-bottom: 16px; font-size: 15px; }
+  p:last-child { margin-bottom: 0; }
+
+  pre, code { font-family: 'IBM Plex Mono', monospace; }
+  pre {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: 6px;
+    padding: 18px 22px; overflow-x: auto;
+    font-size: 13px; line-height: 1.65; color: #b8c4e0; margin-bottom: 20px;
+  }
+  code {
+    font-size: 12px; color: var(--accent3);
+    background: var(--surface2); padding: 2px 6px; border-radius: 3px;
+  }
+
+  .box {
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 18px;
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .box.info   { border-color: var(--accent);  background: rgba(61,122,237,.06); }
+  .box.ok     { border-color: var(--accent2); background: rgba(0,201,167,.06); }
+  .box.warn   { border-color: var(--accent3); background: rgba(245,166,35,.06); }
+  .box.danger { border-color: var(--accent4); background: rgba(224,82,82,.06); }
+  .box-head {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .box.info   .box-head { color: var(--accent); }
+  .box.ok     .box-head { color: var(--accent2); }
+  .box.warn   .box-head { color: var(--accent3); }
+  .box.danger .box-head { color: var(--accent4); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px; margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card-icon  { font-size: 24px; margin-bottom: 10px; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .card p     { font-size: 13px; }
+
+  .steps { counter-reset: step; }
+  .step  { display: flex; gap: 20px; margin-bottom: 28px; align-items: flex-start; }
+  .step-n {
+    counter-increment: step;
+    min-width: 36px; height: 36px;
+    background: var(--accent); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .step-n::before { content: counter(step); }
+  .step-body h3 { font-size: 16px; margin-bottom: 6px; }
+  .step-body p  { margin-bottom: 0; }
+
+  .opt-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; }
+  .opt-table th {
+    background: var(--surface2); color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .opt-table td {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    vertical-align: top; color: var(--muted);
+  }
+  .opt-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--accent3); white-space: nowrap;
+  }
+  .opt-table td:last-child { font-size: 13px; }
+  .opt-table tr:last-child td { border-bottom: none; }
+  .opt-table tr:hover td { background: var(--surface2); }
+
+  /* ── UI Mock ── */
+  .ui-mock {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0 0 20px; margin-bottom: 24px; overflow: hidden;
+  }
+  .ui-mock-bar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+  .ui-mock-title { font-size: 12px; color: var(--muted); margin: 0 auto; font-family: 'IBM Plex Mono', monospace; }
+  .ui-mock-body  { padding: 20px 24px 0; }
+
+  .field-row { margin-bottom: 14px; }
+  .field-lbl { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 5px; display: block; }
+  .field-input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 5px; padding: 7px 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--accent2); width: 100%;
+  }
+  .field-row-sub {
+    display: flex; align-items: center; gap: 12px; margin-top: 6px;
+  }
+  .dropdown-mock {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 5px; padding: 4px 10px;
+    font-size: 11px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px; width: 200px;
+  }
+  .field-valid { font-size: 11px; color: var(--accent2); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 14px; }
+  .col-head { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .cb-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .cb-box {
+    width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+  }
+  .cb-on  { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+  .cb-off { background: var(--surface); border: 1px solid var(--border); }
+  .sep-v  { width: 1px; background: var(--border); margin: 0 4px; }
+
+  .prog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .prog-bar-wrap { flex: 1; background: var(--border); border-radius: 4px; height: 12px; overflow: hidden; }
+  .prog-bar { height: 100%; background: var(--accent); border-radius: 4px; }
+  .prog-pct { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--accent); min-width: 40px; text-align: right; }
+
+  .counter-row { display: flex; gap: 6px; margin: 12px 0; }
+  .ctr { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 4px; text-align: center; }
+  .ctr-val { font-size: 18px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; display: block; }
+  .ctr-lbl { font-size: 9px; color: var(--muted); display: block; margin-top: 2px; }
+  .ctr.orange .ctr-val { color: var(--accent3); }
+  .ctr.purple .ctr-val { color: #a855f7; }
+  .ctr.red    .ctr-val { color: var(--accent4); }
+
+  .log-area {
+    background: var(--bg); border-radius: 4px; padding: 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--muted); line-height: 1.7; max-height: 90px; overflow: hidden;
+  }
+  .log-ok   { color: var(--accent2); }
+  .log-warn { color: var(--accent3); }
+
+  .nf-block {
+    background: var(--surface); border: 1px solid var(--accent3);
+    border-radius: 6px; padding: 14px 18px; margin-bottom: 18px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.8;
+  }
+  .nf-head { color: var(--accent3); font-weight: 600; margin-bottom: 6px; }
+  .nf-item { color: var(--text); }
+  .nf-purple .nf-head { color: #a855f7; }
+
+  footer {
+    margin-top: 80px; padding-top: 28px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 12px; font-family: 'IBM Plex Mono', monospace;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <div class="badges">
+      <span class="badge badge-blue">macOS App</span>
+      <span class="badge badge-green">Swift + Python</span>
+      <span class="badge badge-amber">v7.0</span>
+    </div>
+    <h1><span>USB</span>Sync Tool</h1>
+    <p class="subtitle">Professionelle Ordner-Synchronisation vom USB-Stick auf den Mac —<br>
+    mit nativem UI, Live-Fortschritt, Verlauf, Datumsvergleich und flexiblem Log-Filter</p>
+  </header>
+
+  <!-- FEATURES -->
+  <section>
+    <h2>Features</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <div class="card-title">Ordner-Suche im gesamten Baum</div>
+        <p>Sucht jeden USB-Ordner rekursiv im gesamten Mac-Verzeichnisbaum — nicht nur direkt im Ziel-Pfad.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🕐</div>
+        <div class="card-title">Datumsvergleich</div>
+        <p>Nur neuere Dateien kopieren: USB-Dateien die älter oder gleich alt wie die Mac-Version sind, werden übersprungen.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔎</div>
+        <div class="card-title">Pfad-Validierung</div>
+        <p>Beide Pfade werden live geprüft. Start erst möglich wenn beide existieren.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🕐</div>
+        <div class="card-title">Pfad-Verlauf</div>
+        <p>Die letzten 5 Pfade stehen als Dropdown direkt unter dem Eingabefeld zur Auswahl.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Live-Fortschritt</div>
+        <p>Fortschrittsbalken, 6 Live-Zähler und scrollbares Log in Echtzeit. Spinner wechselt nach Abschluss zu ✅.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">☑️</div>
+        <div class="card-title">Flexible Log-Filter</div>
+        <p>Einstellbar welche Aktionen im Log erscheinen: Kopiert, Ersetzt, Übersprungen, Nicht gefunden, Fehler.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">❓</div>
+        <div class="card-title">Nicht-gefunden-Liste</div>
+        <p>Ordner/Dateien die auf dem Mac nicht existieren, werden am Ende übersichtlich aufgelistet.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🖱️</div>
+        <div class="card-title">Drag &amp; Drop</div>
+        <p>Ordner direkt aus dem Finder in die Pfad-Felder ziehen.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💾</div>
+        <div class="card-title">Persistente Einstellungen</div>
+        <p>Alle Eingaben und Optionen werden gespeichert und beim nächsten Start vorausgefüllt.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALLATION -->
+  <section>
+    <h2>Installation</h2>
+
+    <div class="box warn">
+      <div class="box-head">⚠ Voraussetzungen</div>
+      <p>macOS 12 Monterey oder neuer · Xcode Command Line Tools · Python 3 (ab macOS 12.3 vorinstalliert)</p>
+      <pre style="margin-top:12px;margin-bottom:0"># Xcode Command Line Tools installieren (falls noch nicht vorhanden)
+xcode-select --install</pre>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n"></div>
+        <div class="step-body">
+          <h3>Build-Script herunterladen</h3>
+          <p>Lade <code>build_usb_sync_app.sh</code> herunter (z.B. in den Downloads-Ordner).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n"></div>
+        <div class="step-body">
+          <h3>Terminal öffnen und ausführen</h3>
+          <pre>cd ~/Downloads
+chmod +x build_usb_sync_app.sh
+./build_usb_sync_app.sh</pre>
+          <p>Das Script kompiliert den Swift-Code und legt <code>USBSync.app</code> auf dem Desktop ab.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n"></div>
+        <div class="step-body">
+          <h3>Erster Start – Gatekeeper</h3>
+          <div class="box info" style="margin-top:10px">
+            <div class="box-head">ℹ Einmalige Bestätigung</div>
+            <p>Rechtsklick auf <code>USBSync.app</code> → <strong>„Öffnen"</strong> → im Dialog erneut „Öffnen" klicken. Danach genügt Doppelklick.</p>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n"></div>
+        <div class="step-body">
+          <h3>Bei Updates: App neu bauen</h3>
+          <pre>rm -rf ~/Desktop/USBSync.app
+./build_usb_sync_app.sh</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="box info">
+      <div class="box-head">ℹ Auf einem anderen Mac</div>
+      <p>Wenn die App auf einem neuen Mac verwendet wird und der gespeicherte Pfad nicht mehr stimmt, Einstellungen zurücksetzen:</p>
+      <pre style="margin-top:10px;margin-bottom:0">defaults delete de.usbsync.app</pre>
+    </div>
+  </section>
+
+  <!-- START-DIALOG -->
+  <section>
+    <h2>Start-Dialog</h2>
+    <p>Beim Doppelklick auf <code>USBSync.app</code> öffnet sich der Start-Dialog. Er lässt sich minimieren (gelber Button), in der Größe ändern (grüner Button) und mit anderen Fenstern überlagern.</p>
+
+    <!-- UI Mock: Start-Dialog -->
+    <div class="ui-mock">
+      <div class="ui-mock-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <div class="ui-mock-title">USB Sync Tool</div>
+      </div>
+      <div class="ui-mock-body">
+
+        <div class="field-row">
+          <span class="field-lbl">USB-Quell-Pfad:</span>
+          <div class="field-input">/Volumes/MeinStick/Daten</div>
+          <div class="field-row-sub">
+            <div class="dropdown-mock">▾ &nbsp;Verlauf…</div>
+            <span class="field-valid">✅ Pfad gefunden</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <span class="field-lbl">Mac-Ziel-Pfad:</span>
+          <div class="field-input">/Users/MaxMuster/Daten</div>
+          <div class="field-row-sub">
+            <div class="dropdown-mock">▾ &nbsp;Verlauf…</div>
+            <span class="field-valid">✅ Pfad gefunden</span>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
+
+        <div class="two-col">
+          <div>
+            <div class="col-head">Sync-Optionen:</div>
+            <div class="cb-item"><div class="cb-box cb-on">✓</div> Ersetzen (-e)</div>
+            <div class="cb-item"><div class="cb-box cb-off"></div> Log auf USB (-v)</div>
+            <div class="cb-item"><div class="cb-box cb-off"></div> USB löschen (-l)</div>
+            <div class="cb-item"><div class="cb-box cb-off"></div> Nicht gefunden kopieren (-n)</div>
+            <div class="cb-item"><div class="cb-box cb-on">✓</div> Nur neuere kopieren (-t)</div>
+          </div>
+          <div style="display:flex;gap:0">
+            <div class="sep-v"></div>
+            <div style="padding-left:20px;flex:1">
+              <div class="col-head">Log anzeigen:</div>
+              <div class="cb-item"><div class="cb-box cb-on">✓</div> Kopiert</div>
+              <div class="cb-item"><div class="cb-box cb-on">✓</div> Ersetzt</div>
+              <div class="cb-item"><div class="cb-box cb-on">✓</div> Übersprungen</div>
+              <div class="cb-item"><div class="cb-box cb-on">✓</div> Nicht gefunden</div>
+              <div class="cb-item"><div class="cb-box cb-on">✓</div> Fehler</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <h3>Pfad-Eingabe</h3>
+    <table class="opt-table">
+      <tr><th>Methode</th><th>Beschreibung</th></tr>
+      <tr><td>Tippen</td><td>Pfad direkt eintippen. Während des Tippens erscheint sofort <span style="color:var(--accent2)">✅ Pfad gefunden</span> oder <span style="color:var(--accent4)">⚠️ Pfad existiert nicht</span>.</td></tr>
+      <tr><td>Drag &amp; Drop</td><td>Ordner aus dem Finder direkt in das Textfeld ziehen — der Pfad wird automatisch eingetragen.</td></tr>
+      <tr><td>Verlauf ▾</td><td>Dropdown unter dem Textfeld zeigt die letzten 5 verwendeten Pfade. Auswahl trägt den Pfad direkt ein.</td></tr>
+    </table>
+
+    <div class="box warn">
+      <div class="box-head">⚠ Pfad-Validierung</div>
+      <p>Der Start ist nur möglich wenn beide Pfade auf dem aktuellen Mac existieren. Fehlt ein Pfad, erscheint eine Fehlermeldung und der Dialog bleibt zur Korrektur offen.</p>
+    </div>
+  </section>
+
+  <!-- OPTIONEN -->
+  <section>
+    <h2>Sync-Optionen</h2>
+    <table class="opt-table">
+      <tr><th>Option</th><th>Beschreibung</th></tr>
+      <tr>
+        <td>-e  Ersetzen</td>
+        <td>Vorhandene Dateien und Ordner auf dem Mac werden durch die Version vom USB-Stick überschrieben. Ohne diese Option werden vorhandene Dateien übersprungen.</td>
+      </tr>
+      <tr>
+        <td>-v  Log-Datei</td>
+        <td>Eine Log-Datei mit allen Aktionen wird im Root-Verzeichnis des USB-Sticks gespeichert. Dateiname: <code>USBSync_Log_YYYY-MM-DD_HH-MM-SS.txt</code></td>
+      </tr>
+      <tr>
+        <td>-l  Löschen</td>
+        <td>Erfolgreich kopierte Dateien und danach leere Ordner werden vom USB-Stick gelöscht. Nur erfolgreich kopierte Elemente werden entfernt.</td>
+      </tr>
+      <tr>
+        <td>-n  Nicht gefunden kopieren</td>
+        <td>Ordner und Dateien die auf dem Mac nicht gefunden werden, werden direkt in den Mac-Ziel-Pfad kopiert. Ohne diese Option werden sie übersprungen und gemeldet.</td>
+      </tr>
+      <tr>
+        <td>-t  Nur neuere kopieren</td>
+        <td>Eine Datei wird nur kopiert wenn sie auf dem USB-Stick <strong>neuer</strong> ist als die vorhandene Mac-Version. Dateien die gleich alt oder älter sind, werden übersprungen und im 🕐-Zähler erfasst.</td>
+      </tr>
+    </table>
+
+    <h3>Log-Filter</h3>
+    <p>Mit den 5 Checkboxen unter „Log anzeigen" wird gesteuert welche Aktionen im Fortschrittsfenster erscheinen. Die 6 Zähler oben werden unabhängig vom Filter immer aktualisiert.</p>
+    <table class="opt-table">
+      <tr><th>Filter</th><th>Zeigt</th></tr>
+      <tr><td>Kopiert</td><td>Neu kopierte Dateien (noch nicht auf dem Mac vorhanden)</td></tr>
+      <tr><td>Ersetzt</td><td>Überschriebene Dateien (Option -e aktiv)</td></tr>
+      <tr><td>Übersprungen</td><td>Dateien die bereits vorhanden waren und nicht überschrieben wurden</td></tr>
+      <tr><td>Nicht gefunden</td><td>Ordner/Dateien vom USB-Stick die auf dem Mac nicht gefunden wurden</td></tr>
+      <tr><td>Fehler</td><td>Kopierfehler, Berechtigungsprobleme und andere Fehler</td></tr>
+    </table>
+  </section>
+
+  <!-- FORTSCHRITTSFENSTER -->
+  <section>
+    <h2>Fortschrittsfenster</h2>
+    <p>Nach dem Start öffnet sich das Fortschrittsfenster. Es kann frei in der Größe verändert werden. Nach Abschluss wechselt der Spinner zu ✅ und der Titel zu <strong>„Synchronisierung beendet!"</strong>.</p>
+
+    <div class="ui-mock">
+      <div class="ui-mock-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <div class="ui-mock-title">USB Sync Tool — Synchronisierung läuft…</div>
+      </div>
+      <div class="ui-mock-body">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <span style="font-size:18px">⟳</span>
+          <span style="font-size:14px;font-weight:600">Synchronisierung läuft…</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">🔌 /Volumes/MeinStick/Daten</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:10px">💻 /Users/MaxMuster/Daten</div>
+        <div class="prog-row">
+          <div class="prog-bar-wrap"><div class="prog-bar" style="width:72%"></div></div>
+          <div class="prog-pct">72 %</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
+          <strong style="color:var(--text)">Status:</strong> Kontoauszug_2025_12.pdf
+        </div>
+        <div class="counter-row">
+          <div class="ctr"><span class="ctr-val">142</span><span class="ctr-lbl">📁 Kopiert</span></div>
+          <div class="ctr orange"><span class="ctr-val">38</span><span class="ctr-lbl">🔄 Ersetzt</span></div>
+          <div class="ctr"><span class="ctr-val">0</span><span class="ctr-lbl">⏭️ Überspr.</span></div>
+          <div class="ctr"><span class="ctr-val">0</span><span class="ctr-lbl">🗑️ Gelöscht</span></div>
+          <div class="ctr purple"><span class="ctr-val">5</span><span class="ctr-lbl">🕐 Älter</span></div>
+          <div class="ctr red"><span class="ctr-val">0</span><span class="ctr-lbl">❌ Fehler</span></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:5px;font-size:11px">📋 Log</div>
+          <div style="background:var(--surface);border:1px solid var(--border);padding:4px 14px;border-radius:5px;font-size:11px;color:var(--muted)">❓ Nicht gefunden (1)</div>
+        </div>
+        <div class="log-area">
+          <span class="log-ok">2026-06-10 14:56:57  INFO      KOPIERT: /Users/MaxMuster/Daten/Bank/Rechnung.pdf</span><br>
+          <span class="log-ok">2026-06-10 14:56:57  INFO      ERSETZT: /Users/MaxMuster/Daten/Bank/Kontoauszug.pdf</span><br>
+          <span class="log-warn">2026-06-10 14:56:57  INFO      ÄLTER (nicht kopiert): Fahrgastrechte.pdf  (USB:2025-09-07 &lt;= Mac:2025-09-07)</span><br>
+          <span style="color:var(--muted)">2026-06-10 14:56:57  INFO      ORDNER ERSTELLT: /Users/MaxMuster/Daten/Archiv</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Tabs</h3>
+    <table class="opt-table">
+      <tr><th>Tab</th><th>Inhalt</th></tr>
+      <tr><td>📋 Log</td><td>Scrollbares Protokoll aller Aktionen in Echtzeit. Filterbar über die Log-Filter-Checkboxen im Start-Dialog.</td></tr>
+      <tr><td>❓ Nicht gefunden (N)</td><td>Liste aller Ordner/Dateien die auf dem Mac nicht gefunden wurden sowie älterer Dateien (lila). Die Zahl in Klammern zeigt die Gesamtanzahl.</td></tr>
+    </table>
+
+    <h3>Listen am Ende des Logs</h3>
+    <p>Nach Abschluss werden automatisch zwei separate Listen ans Log angehängt:</p>
+
+    <div class="nf-block nf-purple" style="margin-bottom:12px">
+      <div class="nf-head" style="color:#a855f7">────────────────────────────────────────────────────────────</div>
+      <div class="nf-head" style="color:#a855f7">Folgende Dateien auf dem USB-Stick sind<br>älter oder genauso alt wie auf dem Mac — nicht kopiert:</div>
+      <div class="nf-item">  🕐 Fahrgastrechte-Formular.pdf</div>
+      <div class="nf-item">  🕐 Testx Kopie.txt</div>
+      <div class="nf-head" style="color:#a855f7">────────────────────────────────────────────────────────────</div>
+    </div>
+
+    <div class="nf-block">
+      <div class="nf-head">════════════════════════════════════════════════════════════</div>
+      <div class="nf-head">Folgende Dateien/Ordner wurden nicht im Mac-Ziel-Pfad gefunden:</div>
+      <div class="nf-item">  • Ordner_fehlt</div>
+      <div class="nf-head">════════════════════════════════════════════════════════════</div>
+    </div>
+
+    <p>Wenn Option <code>-n</code> aktiv ist, lautet die zweite Überschrift:<br>
+    <em>„Folgende Dateien/Ordner wurden nicht im Mac-Ziel-Pfad gefunden und dorthin kopiert:"</em></p>
+
+    <div class="box ok">
+      <div class="box-head">✓ Nach dem Sync</div>
+      <p>Der Spinner wechselt zu ✅, der Titel zu <strong>„Synchronisierung beendet!"</strong> und die Fußzeile zeigt <em>„Sync abgeschlossen — Fenster kann geschlossen werden"</em>. Danach erscheint ein Zusammenfassungs-Dialog. Das Fenster bleibt offen — der rote Button (×) beendet die App vollständig.</p>
+    </div>
+  </section>
+
+  <!-- SYNC-LOGIK -->
+  <section>
+    <h2>Sync-Logik</h2>
+    <div class="box ok">
+      <div class="box-head">✓ Ablauf</div>
+      <p>
+        1. Python zählt vorab alle Dateien → Gesamtzahl für den Fortschrittsbalken.<br>
+        2. Für jeden Top-Level-Eintrag auf dem USB-Stick wird der <strong>gesamte Mac-Verzeichnisbaum</strong> nach einem gleichnamigen Ordner durchsucht (case-insensitiv, Unicode-normalisiert).<br>
+        3. Gefundene Ordner: Inhalt wird synchronisiert.<br>
+        4. Nicht gefundene Ordner:<br>
+        &nbsp;&nbsp;&nbsp;→ Option -n aktiv: direkt unter Mac-Ziel-Pfad anlegen und kopieren.<br>
+        &nbsp;&nbsp;&nbsp;→ Ohne -n: überspringen und in der Liste melden.<br>
+        5. Dateien direkt im USB-Root werden wie nicht gefundene Elemente behandelt.<br>
+        6. Option -t: vor dem Kopieren Änderungsdatum vergleichen — ältere/gleich alte Dateien überspringen.<br>
+        7. Option -l: nach dem Kopieren Dateien löschen, dann leere Ordner von unten nach oben.
+      </p>
+    </div>
+    <div class="box warn">
+      <div class="box-head">⚠ Option -l (Löschen)</div>
+      <p>Nur erfolgreich kopierte Dateien werden gelöscht. Übersprungene und ältere Dateien sowie Ordner mit verbliebenem Inhalt bleiben erhalten. Empfehlung: Option -v (Log) zusammen mit -l aktivieren.</p>
+    </div>
+    <div class="box info">
+      <div class="box-head">ℹ Option -t (Nur neuere)</div>
+      <p>Der Vergleich basiert auf dem Änderungsdatum (<code>mtime</code>). Eine Datei wird nur kopiert wenn <code>USB-Datum &gt; Mac-Datum</code>. Bei gleichem Datum wird sie übersprungen. Kombinierbar mit -e: auch vorhandene Dateien werden ersetzt, aber nur wenn die USB-Version neuer ist.</p>
+    </div>
+  </section>
+
+  <!-- EINSTELLUNGEN -->
+  <section>
+    <h2>Einstellungen verwalten</h2>
+    <pre># Gespeicherte Einstellungen anzeigen
+defaults read de.usbsync.app
+
+# Einstellungen zurücksetzen (z.B. auf neuem Mac)
+defaults delete de.usbsync.app</pre>
+  </section>
+
+  <!-- TROUBLESHOOTING -->
+  <section>
+    <h2>Troubleshooting</h2>
+
+    <div class="box warn">
+      <div class="box-head">„Pfad nicht gefunden" beim Start</div>
+      <p>Der gespeicherte Pfad vom letzten Mac stimmt nicht mehr. Einstellungen zurücksetzen:<br>
+      <code>defaults delete de.usbsync.app</code><br>
+      Dann neu starten und Pfad per Drag &amp; Drop aus dem Finder einfügen.</p>
+    </div>
+
+    <div class="box warn">
+      <div class="box-head">Ordner wird nicht gefunden obwohl er existiert</div>
+      <p>Mögliche Ursache: Unicode-Darstellung des Ordnernamens unterscheidet sich (häufig bei Umlauten). Diagnose mit dem mitgelieferten Script:</p>
+      <pre>python3 usb_sync_diagnose.py "Ordnername" "/Pfad/zum/Mac/Ziel"</pre>
+    </div>
+
+    <div class="box warn">
+      <div class="box-head">App öffnet sich nicht (Gatekeeper)</div>
+      <p>Rechtsklick auf <code>USBSync.app</code> → „Öffnen" → im Dialog „Öffnen" bestätigen (einmalig).</p>
+    </div>
+
+    <div class="box warn">
+      <div class="box-head">„Operation not permitted" beim Kopieren</div>
+      <p>macOS verweigert den Zugriff auf bestimmte Ordner.<br>
+      <strong>Lösung:</strong> Systemeinstellungen → Datenschutz &amp; Sicherheit → Festplattenvollzugriff → <code>USBSync.app</code> hinzufügen.</p>
+    </div>
+
+    <div class="box warn">
+      <div class="box-head">Swift-Kompilierung schlägt fehl</div>
+      <p>Xcode Command Line Tools fehlen oder sind veraltet.<br>
+      <code>xcode-select --install</code><br>
+      Falls bereits installiert: Systemeinstellungen → Allgemein → Softwareaktualisierung.</p>
+    </div>
+
+    <div class="box info">
+      <div class="box-head">ℹ Drag &amp; Drop funktioniert nicht</div>
+      <p>Ordner direkt aus einem Finder-Fenster in das Textfeld ziehen — nicht vom Desktop-Hintergrund. Alternativ Pfad manuell eintippen oder per Verlauf-Dropdown auswählen.</p>
+    </div>
+  </section>
+
+  <!-- SYSTEMANFORDERUNGEN -->
+  <section>
+    <h2>Systemanforderungen</h2>
+    <table class="opt-table">
+      <tr><th>Komponente</th><th>Anforderung</th></tr>
+      <tr><td>macOS</td><td>12 Monterey oder neuer</td></tr>
+      <tr><td>Swift</td><td>Xcode Command Line Tools (kostenlos via <code>xcode-select --install</code>)</td></tr>
+      <tr><td>Python</td><td>3.x — ab macOS 12.3 vorinstalliert</td></tr>
+      <tr><td>Berechtigungen</td><td>Lese-Zugriff auf USB-Stick, Schreib-Zugriff auf Mac-Zielverzeichnis</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    <span>USB Sync Tool v7.0 · macOS App · Swift + Python</span>
+    <span>Kein App Store · Kein Xcode-Projekt erforderlich</span>
+  </footer>
+
+</div>
+</body>
+</html>
