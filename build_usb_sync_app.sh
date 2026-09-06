@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# build_usb_sync_app.sh  –  USBSync v4.0
+# build_usb_sync_app.sh  –  USBSync v7.0
 # Echte Checkboxen via Swift-UI + Python Sync-Engine
 # ============================================================
 
@@ -24,7 +24,8 @@ cat > "${DEST}/Contents/Info.plist" << 'PLIST'
   <key>CFBundleName</key>            <string>USBSync</string>
   <key>CFBundleDisplayName</key>     <string>USB Sync Tool</string>
   <key>CFBundleIdentifier</key>      <string>de.usbsync.app</string>
-  <key>CFBundleVersion</key>         <string>4.0</string>
+  <key>CFBundleVersion</key>         <string>7.0</string>
+  <key>CFBundleShortVersionString</key> <string>7.0</string>
   <key>CFBundleExecutable</key>      <string>USBSync</string>
   <key>CFBundlePackageType</key>     <string>APPL</string>
   <key>NSHighResolutionCapable</key> <true/>
@@ -81,8 +82,10 @@ def find_folders(mac_root, target_name):
                 continue
             if norm(entry.name) == target_norm:
                 found.append(entry.path)
-            else:
-                queue.append(entry.path)
+            # Auch bei einem Treffer weiter absteigen: ein gleichnamiger
+            # Ordner kann tiefer im Baum erneut vorkommen und wurde bisher
+            # uebersehen.
+            queue.append(entry.path)
     return found
 
 def copy_tree(src, dst, opt_e, opt_l, opt_newer, logger, stats):
@@ -110,15 +113,19 @@ def copy_tree(src, dst, opt_e, opt_l, opt_newer, logger, stats):
             copy_tree(s, d, opt_e, opt_l, opt_newer, logger, stats)
         else:
             exists = os.path.exists(d)
-            # opt_newer: Quelldatei älter als Zieldatei -> ueberspringen
+            # opt_newer: nur ueberspringen wenn die USB-Datei nicht neuer ist
+            # UND beide gleich gross sind. Bei abweichender Groesse hat sich
+            # der Inhalt geaendert -> trotzdem kopieren (mtime allein reicht
+            # als Vergleich nicht aus).
             if exists and opt_newer:
-                src_mtime = os.path.getmtime(s)
-                dst_mtime = os.path.getmtime(d)
-                if src_mtime <= dst_mtime:
+                src_st_cmp = os.stat(s)
+                dst_st_cmp = os.stat(d)
+                same_size = src_st_cmp.st_size == dst_st_cmp.st_size
+                if src_st_cmp.st_mtime <= dst_st_cmp.st_mtime and same_size:
                     import datetime as dt
-                    src_ts = dt.datetime.fromtimestamp(src_mtime).strftime("%Y-%m-%d %H:%M")
-                    dst_ts = dt.datetime.fromtimestamp(dst_mtime).strftime("%Y-%m-%d %H:%M")
-                    logger.info(f"  ÄLTER -- uebersprungen: {entry.name}  (USB:{src_ts} <= Mac:{dst_ts})")
+                    src_ts = dt.datetime.fromtimestamp(src_st_cmp.st_mtime).strftime("%Y-%m-%d %H:%M")
+                    dst_ts = dt.datetime.fromtimestamp(dst_st_cmp.st_mtime).strftime("%Y-%m-%d %H:%M")
+                    logger.info(f"  ÄLTER/GLEICH -- uebersprungen: {entry.name}  (USB:{src_ts} <= Mac:{dst_ts}, gleiche Groesse)")
                     stats["older"] = stats.get("older", 0) + 1
                     stats.setdefault("older_files", []).append(entry.name)
                     print(f"OLDER:{entry.name}", flush=True)
@@ -145,9 +152,16 @@ def copy_tree(src, dst, opt_e, opt_l, opt_newer, logger, stats):
                         stats["copied"] += 1
                     if opt_l:
                         try:
-                            os.remove(s)
-                            logger.info(f"  GELÖSCHT (USB): {s}")
-                            stats["deleted"] += 1
+                            # Quelle nur loeschen wenn die Kopie nachweislich
+                            # am Ziel liegt und exakt gleich gross ist.
+                            if (os.path.exists(dst_clean) and
+                                    os.path.getsize(dst_clean) == os.path.getsize(src_clean)):
+                                os.remove(s)
+                                logger.info(f"  GELÖSCHT (USB): {s}")
+                                stats["deleted"] += 1
+                            else:
+                                logger.error(f"  NICHT GELÖSCHT (Kopie nicht verifiziert): {s}")
+                                stats["errors"] += 1
                         except Exception as e:
                             logger.error(f"  FEHLER Löschen {s}: {e}")
                             stats["errors"] += 1
@@ -211,6 +225,20 @@ def sync(usb_path, mac_path, opt_e, opt_v, opt_l, opt_n=False, opt_newer=False):
             targets = find_folders(mac_path, name)
 
             if targets:
+                if len(targets) > 1 and os.environ.get("USBSYNC_MULTI") != "1":
+                    # Mehrdeutig: bisher wurde der USB-Ordner in JEDEN
+                    # gleichnamigen Mac-Ordner kopiert -- bei Allerweltsnamen
+                    # ("Bilder", "Dokumente") landet der Inhalt so an vielen
+                    # Stellen. Jetzt: nur der flachste Treffer wird
+                    # synchronisiert, der Rest wird protokolliert.
+                    # USBSYNC_MULTI=1 stellt das alte Verhalten wieder her.
+                    targets.sort(key=lambda p: (p.count(os.sep), len(p), p.lower()))
+                    logger.warning(f"  MEHRDEUTIG: '{name}' {len(targets)}x im Zielbaum gefunden")
+                    logger.warning(f"    -> synchronisiert wird nur: {targets[0]}")
+                    for ignored in targets[1:]:
+                        logger.warning(f"    -> ignoriert: {ignored}")
+                    print(f"AMBIG:{name}:{len(targets)}", flush=True)
+                    targets = targets[:1]
                 for dst in targets:
                     logger.info(f"  GEFUNDEN: {dst}")
                     print(f"SYNCING:{name}", flush=True)
@@ -237,15 +265,17 @@ def sync(usb_path, mac_path, opt_e, opt_v, opt_l, opt_n=False, opt_newer=False):
                     logger.info(f"  ÜBERSPRUNGEN (vorhanden): {dst}")
                     stats["skipped"] += 1
                 else:
-                    # Alters-Check fuer Root-Dateien
+                    # Alters-Check fuer Root-Dateien: nur ueberspringen wenn
+                    # nicht neuer UND gleich gross (siehe copy_tree).
                     if exists and opt_newer:
                         import datetime as dt
-                        src_mtime = os.path.getmtime(entry.path)
-                        dst_mtime = os.path.getmtime(dst)
-                        if src_mtime <= dst_mtime:
-                            src_ts = dt.datetime.fromtimestamp(src_mtime).strftime("%Y-%m-%d %H:%M")
-                            dst_ts = dt.datetime.fromtimestamp(dst_mtime).strftime("%Y-%m-%d %H:%M")
-                            logger.info(f"  ÄLTER -- uebersprungen: {name}  (USB:{src_ts} <= Mac:{dst_ts})")
+                        src_st_cmp = os.stat(entry.path)
+                        dst_st_cmp = os.stat(dst)
+                        same_size = src_st_cmp.st_size == dst_st_cmp.st_size
+                        if src_st_cmp.st_mtime <= dst_st_cmp.st_mtime and same_size:
+                            src_ts = dt.datetime.fromtimestamp(src_st_cmp.st_mtime).strftime("%Y-%m-%d %H:%M")
+                            dst_ts = dt.datetime.fromtimestamp(dst_st_cmp.st_mtime).strftime("%Y-%m-%d %H:%M")
+                            logger.info(f"  ÄLTER/GLEICH -- uebersprungen: {name}  (USB:{src_ts} <= Mac:{dst_ts}, gleiche Groesse)")
                             stats["older"] = stats.get("older", 0) + 1
                             stats.setdefault("older_files", []).append(name)
                             print(f"OLDER:{name}", flush=True)
@@ -1349,10 +1379,27 @@ fi
 echo "Swift kompiliert."
 
 # ============================================================
-# 4) Berechtigungen & Quarantäne
+# 4) Berechtigungen, Quarantäne & Ad-hoc-Signatur
 # ============================================================
 chmod -R 755 "${DEST}"
 xattr -cr "${DEST}" 2>/dev/null || true
+
+# Ad-hoc-Signatur ("-"): auf Apple Silicon zwingend erforderlich, damit die
+# App ueberhaupt startet; auf Intel reduziert sie die Gatekeeper-Reibung.
+if codesign --force --deep --sign - "${DEST}" 2>/dev/null; then
+    echo "Ad-hoc signiert."
+else
+    echo "Hinweis: codesign nicht verfuegbar - App bleibt unsigniert."
+fi
+
+# ============================================================
+# 5) Sauberes ZIP zur Weitergabe (ohne __MACOSX / ._* Reste)
+# ============================================================
+ZIP_DEST="$(dirname "${DEST}")/${APP_NAME}.app.zip"
+rm -f "${ZIP_DEST}"
+if /usr/bin/ditto -c -k --norsrc --noextattr --keepParent "${DEST}" "${ZIP_DEST}"; then
+    echo "ZIP erstellt: ${ZIP_DEST}"
+fi
 
 echo ""
 echo "USBSync.app erfolgreich erstellt!"
